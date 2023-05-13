@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<JUCERPROJECT id="KHQl4f" name="Shredder" displaySplashScreen="1" reportAppUsage="1"
+              splashScreenColour="Dark" projectType="audioplug" version="1.3"
+              bundleIdentifier="com.MatthieuBrucher.Shredder" includeBinaryInAppConfig="1"
+              buildVST="0" buildVST3="1" buildAU="0" buildAUv3="1" buildRTAS="0"
+              buildAAX="0" buildStandalone="1" enableIAA="0" pluginName="Shredder"
+              pluginDesc="" pluginManufacturer="MatthieuBrucher" pluginManufacturerCode="MatB"
+              pluginCode="aShredder" pluginChannelConfigs="{1,1}" pluginIsSynth="0"
+              pluginWantsMidiIn="0" pluginProducesMidiOut="0" pluginIsMidiEffectPlugin="0"
+              pluginEditorRequiresKeys="0" pluginAUExportPrefix="Shredder" pluginRTASCategory=""
+              aaxIdentifier="com.MatthieuBrucher.Shredder" pluginAAXCategory="0"
+              companyName="Matthieu Brucher" companyWebsite="http://www.audio-tk.com/"
+              cppLanguageStandard="17" companyCopyright="Matthieu Brucher"
+              pluginFormats="buildAUv3,buildStandalone,buildVST3" jucerFormatVersion="1"
+              defines="JUCE_VST3_CAN_REPLACE_VST2=0&#10;ATK_NO_FFT" useAppConfig="0"
+              addUsingNamespaceToJuceHeader="0">
+  <MAINGROUP id="H9V4ut" name="Shredder">
+    <GROUP id="{65FEA80A-F647-1916-F1CE-08CA719AE1BE}" name="Source">
+      <FILE id="MvMVFL" name="01-high-pass.cpp" compile="1" resource="0"
+            file="Source/01-high-pass.cpp"/>
+      <FILE id="HMzpE3" name="02-pre-distortion-tone-shaping.cpp" compile="1"
+            resource="0" file="Source/02-pre-distortion-tone-shaping.cpp"/>
+      <FILE id="Udqgaq" name="03-band-pass.cpp" compile="1" resource="0"
+            file="Source/03-band-pass.cpp"/>
+      <FILE id="vC1xv3" name="04-dist-level.cpp" compile="1" resource="0"
+            file="Source/04-dist-level.cpp"/>
+      <FILE id="TxwfYy" name="05-dist.cpp" compile="1" resource="0" file="Source/05-dist.cpp"/>
+      <FILE id="DxhBNf" name="06-post-distortion-tone-shaping.cpp" compile="1"
+            resource="0" file="Source/06-post-distortion-tone-shaping.cpp"/>
+      <FILE id="copDEO" name="static_elements.h" compile="0" resource="0"
+            file="Source/static_elements.h"/>
+      <FILE id="LX9XxX" name="PluginProcessor.cpp" compile="1" resource="0"
+            file="Source/PluginProcessor.cpp"/>
+      <FILE id="lieT9v" name="PluginProcessor.h" compile="0" resource="0"
+            file="Source/PluginProcessor.h"/>
+      <FILE id="gObIkL" name="PluginEditor.cpp" compile="1" resource="0"
+            file="Source/PluginEditor.cpp"/>
+      <FILE id="Js7KLE" name="PluginEditor.h" compile="0" resource="0" file="Source/PluginEditor.h"/>
+    </GROUP>
+    <FILE id="xBIMRF" name="background.jpg" compile="0" resource="1" file="resources/background.jpg"/>
+    <FILE id="gIBvzj" name="ImageLookAndFeel.cpp" compile="1" resource="0"
+          file="../ATKJUCEComponents/JUCE/ImageLookAndFeel.cpp"/>
+    <FILE id="ThLgEC" name="ImageLookAndFeel.h" compile="0" resource="0"
+          file="../ATKJUCEComponents/JUCE/ImageLookAndFeel.h"/>
+    <FILE id="whbcbT" name="KNB_Pitt_L.png" compile="0" resource="1" file="resources/KNB_Pitt_L.png"/>
+    <FILE id="iCwshp" name="Slider.cpp" compile="1" resource="0" file="../ATKJUCEComponents/JUCE/Slider.cpp"/>
+    <FILE id="yDVbgj" name="Slider.h" compile="0" resource="0" file="../ATKJUCEComponents/JUCE/Slider.h"/>
+  </MAINGROUP>
+  <EXPORTFORMATS>
+    <XCODE_MAC targetFolder="Builds/MacOSX" vst3Folder="../../../SDKs/VST3_SDK"
+               keepCustomXcodeSchemes="1" aaxFolder="../../SDKs/AAX_SDK_2p3p0"
+               xcodeValidArchs="arm64,arm64e,x86_64" extraCompilerFlags="-fno-aligned-allocation">
+      <CONFIGURATIONS>
+        <CONFIGURATION name="Debug" isDebug="1" optimisation="1" targetName="Shredder" enablePluginBinaryCopyStep="1"
+                       headerPath="../../../&#10;../../../../../AudioTK&#10;../../../../../AudioTK/3rdParty/gsl/include&#10;../../../../../AudioTK/3rdParty/eigen&#10;../../../../../boost_1_77_0&#10;../../../../../ATK-Modelling&#10;"
+                       osxArchitecture="64BitIntel" codeSigningIdentity="Brucher Matthieu"
+                       macOSBaseSDK="12.1" osxSDK="12.1 SDK"/>
+        <CONFIGURATION name="Release" isDebug="0" optimisation="3" targetName="Shredder"
+                       enablePluginBinaryCopyStep="1" stripLocalSymbols="1" fastMath="1"
+                       headerPath="../../../&#10;../../../../../AudioTK&#10;../../../../../AudioTK/3rdParty/gsl/include&#10;../../../../../AudioTK/3rdParty/eigen&#10;../../../../../boost_1_77_0&#10;../../../../../ATK-Modelling&#10;"
+                       aaxBinaryLocation="$(HOME)/Library/Application Support/Avid/Audio/Plug-Ins/"
+                       osxSDK="12.1 SDK" codeSigningIdentity="Developer ID Application: Matthieu Brucher (APLDS8QMQ5)"
+                       customXcodeFlags="OTHER_CODE_SIGN_FLAGS= --options=runtime --timestamp"
+                       macOSBaseSDK="12.1"/>
+      </CONFIGURATIONS>
+      <MODULEPATHS>
+        <MODULEPATH id="juce_core" path="../../JUCE/modules"/>
+        <MODULEPATH id="juce_events" path="../../JUCE/modules"/>
+        <MODULEPATH id="juce_graphics" path="../../JUCE/modules"/>
+        <MODULEPATH id="juce_data_structures" path="../../JUCE/modules"/>
+        <MODULEPATH id="juce_gui_basics" path="../../JUCE/modules"/>
+        <MODULEPATH id="juce_gui_extra" path="../../JUCE/modules"/>
+        <MODULEPATH id="juce_cryptography" path="../../JUCE/modules"/>
+        <MODULEPATH id="juce_audio_basics" path="../../JUCE/modules"/>
+        <MODULEPATH id="juce_audio_devices" path="../../JUCE/modules"/>
+        <MODULEPATH id="juce_audio_formats" path="../../../JUCE/modules"/>
+        <MODULEPATH id="juce_audio_processors" path="../../JUCE/modules"/>
+        <MODULEPATH id="juce_audio_plugin_client" path="../../../JUCE/modules"/>
+        <MODULEPATH id="juce_audio_utils" path="../../JUCE/modules"/>
+        <MODULEPATH id="atk_core" path="../../../AudioTK/modules/JUCE"/>
+        <MODULEPATH id="atk_utility" path="../../../AudioTK/modules/JUCE"/>
+        <MODULEPATH id="atk_tools" path="../../../AudioTK/modules/JUCE"/>
+        <MODULEPATH id="atk_modelling" path="../../../ATK-Modelling/modules/JUCE"/>
+        <MODULEPATH id="atk_eq" path="../../../AudioTK/modules/JUCE"/>
+      </MODULEPATHS>
+    </XCODE_MAC>
+    <VS2019 targetFolder="Builds/VisualStudio2019">
+      <CONFIGURATIONS>
+        <CONFIGURATION isDebug="1" name="Debug" headerPath="C:\Dev\ATK-Shredder\Shredder&#10;C:\Dev\AudioTK&#10;C:\Dev\AudioTK\3rdParty\gsl\include&#10;C:\Dev\AudioTK\3rdParty\eigen&#10;C:\Dev\boost_1_75_0&#10;C:\Dev\ATK-Modelling&#10;"/>
+        <CONFIGURATION isDebug="0" name="Release" headerPath="C:\Dev\ATK-Shredder\Shredder&#10;C:\Dev\AudioTK&#10;C:\Dev\AudioTK\3rdParty\gsl\include&#10;C:\Dev\AudioTK\3rdParty\eigen&#10;C:\Dev\boost_1_75_0&#10;C:\Dev\ATK-Modelling&#10;"/>
+      </CONFIGURATIONS>
+      <MODULEPATHS>
+        <MODULEPATH id="juce_gui_extra"/>
+        <MODULEPATH id="juce_gui_basics"/>
+        <MODULEPATH id="juce_graphics"/>
+        <MODULEPATH id="juce_events"/>
+        <MODULEPATH id="juce_data_structures"/>
+        <MODULEPATH id="juce_cryptography"/>
+        <MODULEPATH id="juce_core"/>
+        <MODULEPATH id="juce_audio_utils"/>
+        <MODULEPATH id="juce_audio_processors"/>
+        <MODULEPATH id="juce_audio_plugin_client"/>
+        <MODULEPATH id="juce_audio_formats"/>
+        <MODULEPATH id="juce_audio_devices"/>
+        <MODULEPATH id="juce_audio_basics"/>
+        <MODULEPATH id="atk_utility" path="C:\Dev\AudioTK\modules\JUCE"/>
+        <MODULEPATH id="atk_tools" path="C:\Dev\AudioTK\modules\JUCE"/>
+        <MODULEPATH id="atk_modelling" path="C:\Dev\ATK-Modelling/modules/JUCE"/>
+        <MODULEPATH id="atk_eq" path="C:\Dev\AudioTK\modules\JUCE"/>
+        <MODULEPATH id="atk_core" path="C:\Dev\AudioTK\modules\JUCE"/>
+      </MODULEPATHS>
+    </VS2019>
+    <VS2019 targetFolder="Builds/VisualStudio2019_32">
+      <CONFIGURATIONS>
+        <CONFIGURATION isDebug="1" name="Debug" headerPath="C:\Dev\ATK-Shredder\Shredder&#10;C:\Dev\AudioTK&#10;C:\Dev\AudioTK\3rdParty\gsl\include&#10;C:\Dev\AudioTK\3rdParty\eigen&#10;C:\Dev\boost_1_75_0&#10;C:\Dev\ATK-Modelling&#10;"
+                       winArchitecture="Win32"/>
+        <CONFIGURATION isDebug="0" name="Release" headerPath="C:\Dev\ATK-Shredder\Shredder&#10;C:\Dev\AudioTK&#10;C:\Dev\AudioTK\3rdParty\gsl\include&#10;C:\Dev\AudioTK\3rdParty\eigen&#10;C:\Dev\boost_1_75_0&#10;C:\Dev\ATK-Modelling&#10;"
+                       winArchitecture="Win32"/>
+      </CONFIGURATIONS>
+      <MODULEPATHS>
+        <MODULEPATH id="juce_gui_extra"/>
+        <MODULEPATH id="juce_gui_basics"/>
+        <MODULEPATH id="juce_graphics"/>
+        <MODULEPATH id="juce_events"/>
+        <MODULEPATH id="juce_data_structures"/>
+        <MODULEPATH id="juce_cryptography"/>
+        <MODULEPATH id="juce_core"/>
+        <MODULEPATH id="juce_audio_utils"/>
+        <MODULEPATH id="juce_audio_processors"/>
+        <MODULEPATH id="juce_audio_plugin_client"/>
+        <MODULEPATH id="juce_audio_formats"/>
+        <MODULEPATH id="juce_audio_devices"/>
+        <MODULEPATH id="juce_audio_basics"/>
+        <MODULEPATH id="atk_utility" path="C:\Dev\AudioTK\modules\JUCE"/>
+        <MODULEPATH id="atk_tools" path="C:\Dev\AudioTK\modules\JUCE"/>
+        <MODULEPATH id="atk_modelling" path="C:\Dev\ATK-Modelling/modules/JUCE"/>
+        <MODULEPATH id="atk_eq" path="C:\Dev\AudioTK\modules\JUCE"/>
+        <MODULEPATH id="atk_core" path="C:\Dev\AudioTK\modules\JUCE"/>
+      </MODULEPATHS>
+    </VS2019>
+  </EXPORTFORMATS>
+  <MODULES>
+    <MODULE id="atk_core" showAllCode="1" useLocalCopy="0" useGlobalPath="0"/>
+    <MODULE id="atk_eq" showAllCode="1" useLocalCopy="0" useGlobalPath="0"/>
+    <MODULE id="atk_modelling" showAllCode="1" useLocalCopy="0" useGlobalPath="0"/>
+    <MODULE id="atk_tools" showAllCode="1" useLocalCopy="0" useGlobalPath="0"/>
+    <MODULE id="atk_utility" showAllCode="1" useLocalCopy="0" useGlobalPath="0"/>
+    <MODULE id="juce_audio_basics" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_audio_devices" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_audio_formats" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_audio_plugin_client" showAllCode="1" useLocalCopy="0"
+            useGlobalPath="1"/>
+    <MODULE id="juce_audio_processors" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_audio_utils" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_core" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_cryptography" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_data_structures" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_events" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_graphics" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_gui_basics" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_gui_extra" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+  </MODULES>
+  <JUCEOPTIONS JUCE_QUICKTIME="disabled"/>
+  <LIVE_SETTINGS>
+    <OSX/>
+    <WINDOWS/>
+  </LIVE_SETTINGS>
+</JUCERPROJECT>
