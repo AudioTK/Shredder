@@ -29,21 +29,21 @@ class StaticFilter final: public ATK::ModellerFilter<double>
   using typename ATK::TypedBaseFilter<double>::DataType;
   bool initialized{false};
 
-  Eigen::Matrix<DataType, 3, 1> static_state{Eigen::Matrix<DataType, 3, 1>::Zero()};
+  Eigen::Matrix<DataType, 1, 1> static_state{Eigen::Matrix<DataType, 1, 1>::Zero()};
   mutable Eigen::Matrix<DataType, 1, 1> input_state{Eigen::Matrix<DataType, 1, 1>::Zero()};
   mutable Eigen::Matrix<DataType, 3, 1> dynamic_state{Eigen::Matrix<DataType, 3, 1>::Zero()};
   ATK::StaticResistorCapacitor<DataType> r1c1{3300, 4.7e-08};
+  DataType pr01{100000};
+  DataType pr01_trimmer{0};
   ATK::StaticCapacitor<DataType> c2{1e-10};
   ATK::StaticResistor<DataType> r19{0.001};
   ATK::StaticCapacitor<DataType> c20{1e-08};
-  DataType pr01{100000};
-  DataType pr01_trimmer{0};
 
 public:
   StaticFilter()
   : ModellerFilter<DataType>(3, 1)
   {
-    static_state << 0.000000, -5.000000, 5.000000;
+    static_state << 0.000000;
   }
 
   ~StaticFilter() override = default;
@@ -60,7 +60,7 @@ public:
 
   gsl::index get_nb_static_pins() const override
   {
-    return 3;
+    return 1;
   }
 
   Eigen::Matrix<DataType, Eigen::Dynamic, 1> get_static_state() const override
@@ -103,10 +103,6 @@ public:
   {
     switch(identifier)
     {
-    case 1:
-      return "vdd";
-    case 2:
-      return "vcc";
     case 0:
       return "0";
     default:
@@ -243,8 +239,6 @@ bool iterate() const
 {
     // Static states
     auto s0_= static_state[0];
-    auto s1_= static_state[1];
-    auto s2_= static_state[2];
 
     // Input states
    auto  i0_= input_state[0];
@@ -257,7 +251,7 @@ bool iterate() const
     // Precomputes
 
     Eigen::Matrix<DataType, 3, 1> eqs(Eigen::Matrix<DataType, 3, 1>::Zero());
-    auto eq0 = - (steady_state ? 0 : r1c1.get_current(s0_, d0_)) + (steady_state ? 0 : c2.get_current(d0_, d2_)) + (pr01_trimmer != 0 ? (d2_ - d0_) / (pr01_trimmer * pr01) : 0);
+    auto eq0 = - (steady_state ? 0 : r1c1.get_current(s0_, d0_)) + (pr01_trimmer != 0 ? (d2_ - d0_) / (pr01_trimmer * pr01) : 0) + (steady_state ? 0 : c2.get_current(d0_, d2_));
     auto eq1 = - r19.get_current(s0_, d1_) - (steady_state ? 0 : c20.get_current(i0_, d1_));
     auto eq2 = dynamic_state[1] - dynamic_state[0];
     eqs << eq0, eq1, eq2;
@@ -269,9 +263,9 @@ bool iterate() const
       return true;
     }
 
-    auto jac0_0 = 0 - (steady_state ? 0 : r1c1.get_gradient()) - (steady_state ? 0 : c2.get_gradient()) + (pr01_trimmer != 0 ? -1 / (pr01_trimmer * pr01) : 0);
+    auto jac0_0 = 0 - (steady_state ? 0 : r1c1.get_gradient()) + (pr01_trimmer != 0 ? -1 / (pr01_trimmer * pr01) : 0) - (steady_state ? 0 : c2.get_gradient());
     auto jac0_1 = 0;
-    auto jac0_2 = 0 + (steady_state ? 0 : c2.get_gradient()) + (pr01_trimmer != 0 ? 1 / (pr01_trimmer * pr01) : 0);
+    auto jac0_2 = 0 + (pr01_trimmer != 0 ? 1 / (pr01_trimmer * pr01) : 0) + (steady_state ? 0 : c2.get_gradient());
     auto jac1_0 = 0;
     auto jac1_1 = 0 - r19.get_gradient() - (steady_state ? 0 : c20.get_gradient());
     auto jac1_2 = 0;

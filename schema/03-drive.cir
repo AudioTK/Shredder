@@ -1,7 +1,5 @@
 *
 vin	Vin	0	AC	1V
-Vdd	Vdd	0	DC	-5V
-Vcc	Vcc	0	DC	5V
 *
 C6	Vin	1	0.1u
 R4	1	2	10K
@@ -13,7 +11,7 @@ R5	4	0	1k
 C9	3	5	0.22u
 P1	4	5	5	100k
 C7	2	6	0.022u
-P2	5	vout	vout	22k
+P2	5	vout	5	22k
 *
 *	V-	V+	out
 Z2a	4	2	vout
