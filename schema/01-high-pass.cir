@@ -1,6 +1,14 @@
 *
-Vin	Vin	0	AC	1V
+vin	Vin	0	AC	1V
+Vdd	Vdd	0	DC	-5V
+Vcc	Vcc	0	DC	5V
 *
-R043	0	Vout	100K
-C033	Vin	Vout	0.015UF
-*
+C20	vin	2	0.01UF
+R19	0	2	1M
+R1	0	3	3.3k
+C1	3	4	0.047UF
+C2	4	vout	100p
+PR01	4	vout	vout	100k
+
+*	V-	V+	out
+Z1a	4	2	vout

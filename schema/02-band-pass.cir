@@ -1,0 +1,12 @@
+*
+vin	Vin	0	AC	1V
+Vdd	Vdd	0	DC	-5V
+Vcc	Vcc	0	DC	5V
+*
+C3	vin	1	0.68u
+R2	1	2	12.3k
+C5	2	vout	47p
+R3	2	vout	680k
+
+*	V-	V+	out
+Z1b	2	0	vout
