@@ -1,0 +1,7 @@
+*
+Vin	Vin	0	AC	1
+*
+P	Vin	1	0	100k
+C18	1	vout	0.22u
+R14	vout	0	1M
+*

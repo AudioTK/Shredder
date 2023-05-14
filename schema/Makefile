@@ -1,10 +1,10 @@
 export DYLD_LIBRARY_PATH=/Users/matthieu/local/lib:/opt/homebrew/lib/cmake/Boost-1.81.0/lib
 
-CXXFLAGS= -I /Users/matthieu/local/lib -I /Users/matthieu/local/include -I /opt/homebrew/lib/cmake/Boost-1.81.0 -L /Users/matthieu/local/lib -L /Users/matthieu/local/lib
+CXXFLAGS= -I /Users/matthieu/local/lib -I /Users/matthieu/local/include -I /opt/homebrew/include -L /Users/matthieu/local/lib -L /Users/matthieu/local/lib
 
 SRC_FILES := $(wildcard *.cir)
 CPP_FILES := $(patsubst %.cir,%.cpp,$(SRC_FILES)) 
-EXE_FILES := $(patsubst %.cpp,%.exe,$(CPP_FILES)) generate_full.exe
+EXE_FILES := $(patsubst %.cpp,%.exe,$(CPP_FILES)) #generate_full.exe
 DAT_FILES := $(patsubst %.exe,%.dat,$(EXE_FILES))
 PNG_FILES := $(patsubst %.exe,%.png,$(EXE_FILES))
 

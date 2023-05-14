@@ -1,0 +1,10 @@
+*
+Vin	Vin	0	AC	1
+*
+R7	0	1	40k
+C12	1	2	0.22u
+C11	2	vout	0.0022u
+R8	2	vout	220k
+*
+*	V-	V+	out
+Z2a	2	vin	vout
