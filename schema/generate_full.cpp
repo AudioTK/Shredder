@@ -20,81 +20,99 @@ constexpr size_t OVERSAMPLING = 8;
 
 int main(int argc, const char** argv)
 {
-  std::vector<double> input(PROCESSSIZE);
-  std::vector<double> output(PROCESSSIZE);
-  for(size_t i = 0; i < PROCESSSIZE; ++i)
-  {
-    auto frequency = (20. + i) / PROCESSSIZE * (20000 - 20);
-    input[i] = std::sin(i * boost::math::constants::pi<double>() * (frequency / SAMPLING_RATE));
-  }
+    std::vector<double> input(PROCESSSIZE);
+    std::vector<double> output(PROCESSSIZE);
+    for (size_t i = 0; i < PROCESSSIZE; ++i)
+    {
+        auto frequency = (20. + i) / PROCESSSIZE * (20000 - 20);
+        input[i] = std::sin(i * boost::math::constants::pi<double>() *
+                            (frequency / SAMPLING_RATE));
+    }
 
-  ATK::InPointerFilter<double> inFilter(input.data(), 1, PROCESSSIZE, false);
-  std::unique_ptr<ATK::ModellerFilter<double>> highPassFilter = Shredder::createStaticFilter_stage1();
-  ATK::OversamplingFilter<double, ATK::Oversampling6points5order_8<double>> oversamplingFilter;
-  std::unique_ptr<ATK::ModellerFilter<double>> preDistortionToneShapingFilter = Shredder::createStaticFilter_stage2();
-  std::unique_ptr<ATK::ModellerFilter<double>> bandPassFilter = Shredder::createStaticFilter_stage3();
-  std::unique_ptr<ATK::ModellerFilter<double>> distLevelFilter = Shredder::createStaticFilter_stage4();
-  std::unique_ptr<ATK::ModellerFilter<double>> distFilter = Shredder::createStaticFilter_stage5();
-  std::unique_ptr<ATK::ModellerFilter<double>> postDistortionToneShapingFilter = Shredder::createStaticFilter_stage6();
-    
-  ATK::IIRFilter<ATK::ButterworthLowPassCoefficients<double>> lowpassFilter;
-  ATK::DecimationFilter<double> decimationFilter;
-  ATK::OutPointerFilter<double> outFilter(output.data(), 1, PROCESSSIZE, false);
+    ATK::InPointerFilter<double> inFilter(input.data(), 1, PROCESSSIZE, false);
+    std::unique_ptr<ATK::ModellerFilter<double>> highPassFilter =
+        Shredder::createStaticFilter_stage1();
+    std::unique_ptr<ATK::ModellerFilter<double>> bandPassFilter =
+        Shredder::createStaticFilter_stage2();
+    ATK::OversamplingFilter<double, ATK::Oversampling6points5order_8<double>>
+        oversamplingFilter;
+    std::unique_ptr<ATK::ModellerFilter<double>> driveFilter =
+        Shredder::createStaticFilter_stage3();
+    std::unique_ptr<ATK::ModellerFilter<double>> toneShapingFilter =
+        Shredder::createStaticFilter_stage4();
+    std::unique_ptr<ATK::ModellerFilter<double>> contourFilter =
+        Shredder::createStaticFilter_stage5();
 
-  highPassFilter->set_input_port(highPassFilter->find_input_pin("vin"), &inFilter, 0);
-  oversamplingFilter.set_input_port(0, highPassFilter.get(), highPassFilter->find_dynamic_pin("vout"));
-  preDistortionToneShapingFilter->set_input_port(
-      preDistortionToneShapingFilter->find_input_pin("vin"), &oversamplingFilter, 0);
-  bandPassFilter->set_input_port(bandPassFilter->find_input_pin("vin"),
-      preDistortionToneShapingFilter.get(),
-      preDistortionToneShapingFilter->find_dynamic_pin("vout"));
-  distLevelFilter->set_input_port(
-      distLevelFilter->find_input_pin("vin"), bandPassFilter.get(), bandPassFilter->find_dynamic_pin("vout"));
-  distFilter->set_input_port(
-      distFilter->find_input_pin("vin"), distLevelFilter.get(), distLevelFilter->find_dynamic_pin("vout"));
-  postDistortionToneShapingFilter->set_input_port(
-      postDistortionToneShapingFilter->find_input_pin("vin"), distFilter.get(), distFilter->find_dynamic_pin("vout"));
-  lowpassFilter.set_input_port(
-      0, postDistortionToneShapingFilter.get(), postDistortionToneShapingFilter->find_dynamic_pin("vout"));
-  decimationFilter.set_input_port(0, &lowpassFilter, 0);
-  outFilter.set_input_port(0, &decimationFilter, 0);
+    ATK::IIRFilter<ATK::ButterworthLowPassCoefficients<double>> lowpassFilter;
+    ATK::DecimationFilter<double> decimationFilter;
 
-  lowpassFilter.set_cut_frequency(20000);
-  lowpassFilter.set_order(6);
+    std::unique_ptr<ATK::ModellerFilter<double>> volumeFilter =
+        Shredder::createStaticFilter_stage6();
 
-  inFilter.set_input_sampling_rate(SAMPLING_RATE);
-  inFilter.set_output_sampling_rate(SAMPLING_RATE);
-  highPassFilter->set_input_sampling_rate(SAMPLING_RATE);
-  highPassFilter->set_output_sampling_rate(SAMPLING_RATE);
-  oversamplingFilter.set_input_sampling_rate(SAMPLING_RATE);
-  oversamplingFilter.set_output_sampling_rate(SAMPLING_RATE * OVERSAMPLING);
-  preDistortionToneShapingFilter->set_input_sampling_rate(SAMPLING_RATE * OVERSAMPLING);
-  preDistortionToneShapingFilter->set_output_sampling_rate(SAMPLING_RATE * OVERSAMPLING);
-  bandPassFilter->set_input_sampling_rate(SAMPLING_RATE * OVERSAMPLING);
-  bandPassFilter->set_output_sampling_rate(SAMPLING_RATE * OVERSAMPLING);
-  distLevelFilter->set_input_sampling_rate(SAMPLING_RATE * OVERSAMPLING);
-  distLevelFilter->set_output_sampling_rate(SAMPLING_RATE * OVERSAMPLING);
-  distFilter->set_input_sampling_rate(SAMPLING_RATE * OVERSAMPLING);
-  distFilter->set_output_sampling_rate(SAMPLING_RATE * OVERSAMPLING);
-  postDistortionToneShapingFilter->set_input_sampling_rate(SAMPLING_RATE * OVERSAMPLING);
-  postDistortionToneShapingFilter->set_output_sampling_rate(SAMPLING_RATE * OVERSAMPLING);
-  lowpassFilter.set_input_sampling_rate(SAMPLING_RATE * OVERSAMPLING);
-  lowpassFilter.set_output_sampling_rate(SAMPLING_RATE * OVERSAMPLING);
-  decimationFilter.set_input_sampling_rate(SAMPLING_RATE * OVERSAMPLING);
-  decimationFilter.set_output_sampling_rate(SAMPLING_RATE);
-  outFilter.set_input_sampling_rate(SAMPLING_RATE);
-  outFilter.set_output_sampling_rate(SAMPLING_RATE);
+    ATK::OutPointerFilter<double> outFilter(output.data(), 1, PROCESSSIZE,
+                                            false);
 
-  distLevelFilter->set_parameter(0, 0.1);
+    highPassFilter->set_input_port(highPassFilter->find_input_pin("vin"),
+                                   &inFilter, 0);
+    bandPassFilter->set_input_port(bandPassFilter->find_input_pin("vin"),
+                                   highPassFilter.get(),
+                                   highPassFilter->find_dynamic_pin("vout"));
+    oversamplingFilter.set_input_port(0, bandPassFilter.get(),
+                                      bandPassFilter->find_dynamic_pin("vout"));
+    driveFilter->set_input_port(driveFilter->find_input_pin("vin"),
+                                &oversamplingFilter,
+                                oversamplingFilter.find_dynamic_pin("vout"));
+    toneShapingFilter->set_input_port(toneShapingFilter->find_input_pin("vin"),
+                                      driveFilter.get(),
+                                      driveFilter->find_dynamic_pin("vout"));
+    contourFilter->set_input_port(contourFilter->find_input_pin("vin"),
+                                  toneShapingFilter.get(),
+                                  toneShapingFilter->find_dynamic_pin("vout"));
+    lowpassFilter.set_input_port(0, contourFilter.get(),
+                                 contourFilter->find_dynamic_pin("vout"));
+    decimationFilter.set_input_port(0, &lowpassFilter, 0);
+    volumeFilter->set_input_port(volumeFilter->find_input_pin("vin"),
+                                 &decimationFilter, 0);
 
-  for(gsl::index i = 0; i < PROCESSSIZE; i += 1024)
-  {
-    outFilter.process(1024);
-  }
+    outFilter.set_input_port(0, volumeFilter.get(),
+                             volumeFilter->find_dynamic_pin("vout"));
 
-  std::ofstream out(argv[1]);
-  for(size_t i = 0; i < PROCESSSIZE; ++i)
-  {
-    out << input[i] << "\t" << output[i] << std::endl;
-  }
+    lowpassFilter.set_cut_frequency(20000);
+    lowpassFilter.set_order(6);
+
+    inFilter.set_input_sampling_rate(SAMPLING_RATE);
+    inFilter.set_output_sampling_rate(SAMPLING_RATE);
+    highPassFilter->set_input_sampling_rate(SAMPLING_RATE);
+    highPassFilter->set_output_sampling_rate(SAMPLING_RATE);
+    bandPassFilter->set_input_sampling_rate(SAMPLING_RATE);
+    bandPassFilter->set_output_sampling_rate(SAMPLING_RATE);
+    oversamplingFilter.set_input_sampling_rate(SAMPLING_RATE);
+    oversamplingFilter.set_output_sampling_rate(SAMPLING_RATE * OVERSAMPLING);
+    driveFilter->set_input_sampling_rate(SAMPLING_RATE * OVERSAMPLING);
+    driveFilter->set_output_sampling_rate(SAMPLING_RATE * OVERSAMPLING);
+    toneShapingFilter->set_input_sampling_rate(SAMPLING_RATE * OVERSAMPLING);
+    toneShapingFilter->set_output_sampling_rate(SAMPLING_RATE * OVERSAMPLING);
+    contourFilter->set_input_sampling_rate(SAMPLING_RATE * OVERSAMPLING);
+    contourFilter->set_output_sampling_rate(SAMPLING_RATE * OVERSAMPLING);
+    lowpassFilter.set_input_sampling_rate(SAMPLING_RATE * OVERSAMPLING);
+    lowpassFilter.set_output_sampling_rate(SAMPLING_RATE * OVERSAMPLING);
+    decimationFilter.set_input_sampling_rate(SAMPLING_RATE * OVERSAMPLING);
+    decimationFilter.set_output_sampling_rate(SAMPLING_RATE);
+    volumeFilter->set_input_sampling_rate(SAMPLING_RATE);
+    volumeFilter->set_output_sampling_rate(SAMPLING_RATE);
+    outFilter.set_input_sampling_rate(SAMPLING_RATE);
+    outFilter.set_output_sampling_rate(SAMPLING_RATE);
+
+    distLevelFilter->set_parameter(0, 0.1);
+
+    for (gsl::index i = 0; i < PROCESSSIZE; i += 1024)
+    {
+        outFilter.process(1024);
+    }
+
+    std::ofstream out(argv[1]);
+    for (size_t i = 0; i < PROCESSSIZE; ++i)
+    {
+        out << input[i] << "\t" << output[i] << std::endl;
+    }
 }

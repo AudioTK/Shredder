@@ -4,7 +4,7 @@ CXXFLAGS= -I /Users/matthieu/local/lib -I /Users/matthieu/local/include -I /opt/
 
 SRC_FILES := $(wildcard *.cir)
 CPP_FILES := $(patsubst %.cir,%.cpp,$(SRC_FILES)) 
-EXE_FILES := $(patsubst %.cpp,%.exe,$(CPP_FILES)) #generate_full.exe
+EXE_FILES := $(patsubst %.cpp,%.exe,$(CPP_FILES)) generate_full.exe
 DAT_FILES := $(patsubst %.exe,%.dat,$(EXE_FILES))
 PNG_FILES := $(patsubst %.exe,%.png,$(EXE_FILES))
 

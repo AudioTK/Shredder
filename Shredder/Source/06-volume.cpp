@@ -1,6 +1,3 @@
-#include <cstdlib>
-#include <memory>
-
 #include <ATK/Core/Utilities.h>
 #include <ATK/Modelling/ModellerFilter.h>
 #include <ATK/Modelling/StaticComponent/StaticCapacitor.h>
@@ -8,20 +5,24 @@
 #include <ATK/Modelling/StaticComponent/StaticCurrent.h>
 #include <ATK/Modelling/StaticComponent/StaticDiode.h>
 #include <ATK/Modelling/StaticComponent/StaticEbersMollTransistor.h>
+#include <ATK/Modelling/StaticComponent/StaticGummelPoonTransistor.h>
 #include <ATK/Modelling/StaticComponent/StaticMOSFETTransistor.h>
 #include <ATK/Modelling/StaticComponent/StaticResistor.h>
 #include <ATK/Modelling/StaticComponent/StaticResistorCapacitor.h>
 
 #include <Eigen/Eigen>
 
+#include <cstdlib>
+#include <memory>
+
 namespace
 {
-constexpr gsl::index MAX_ITERATION = 10;
-constexpr gsl::index MAX_ITERATION_STEADY_STATE{200};
+  constexpr gsl::index MAX_ITERATION{1};
+  constexpr gsl::index MAX_ITERATION_STEADY_STATE{1};
 
-constexpr gsl::index INIT_WARMUP{10};
-constexpr double EPS{1e-8};
-constexpr double MAX_DELTA{1e-1};
+  constexpr gsl::index INIT_WARMUP = 1;
+  constexpr double EPS{1e-8};
+  constexpr double MAX_DELTA{1e-1};
 
 class StaticFilter final: public ATK::ModellerFilter<double>
 {
@@ -31,13 +32,14 @@ class StaticFilter final: public ATK::ModellerFilter<double>
   Eigen::Matrix<DataType, 1, 1> static_state{Eigen::Matrix<DataType, 1, 1>::Zero()};
   mutable Eigen::Matrix<DataType, 1, 1> input_state{Eigen::Matrix<DataType, 1, 1>::Zero()};
   mutable Eigen::Matrix<DataType, 2, 1> dynamic_state{Eigen::Matrix<DataType, 2, 1>::Zero()};
-  ATK::StaticDiode<DataType, 1, 1> d004d003{1e-14, 1.24, 0.026};
-  ATK::StaticResistorCapacitor<DataType> r033c027{2200, 1e-05};
-  ATK::StaticResistorCapacitor<DataType> r031c023{4700, 1.5e-08};
-  ATK::StaticResistor<DataType> r032{10000};
+  ATK::StaticCapacitor<DataType> c18{2.2e-07};
+  DataType p{100000};
+  DataType p_trimmer{0};
+  ATK::StaticResistor<DataType> r14{0.001};
 
 public:
-  StaticFilter(): ModellerFilter<DataType>(2, 1)
+  StaticFilter()
+  : ModellerFilter<DataType>(2, 1)
   {
     static_state << 0.000000;
   }
@@ -66,7 +68,7 @@ public:
 
   gsl::index get_nb_components() const override
   {
-    return 4;
+    return 3;
   }
 
   std::string get_dynamic_pin_name(gsl::index identifier) const override
@@ -76,7 +78,7 @@ public:
     case 1:
       return "vout";
     case 0:
-      return "2";
+      return "1";
     default:
       throw ATK::RuntimeError("No such pin");
     }
@@ -106,13 +108,17 @@ public:
 
   gsl::index get_number_parameters() const override
   {
-    return 0;
+    return 1;
   }
 
   std::string get_parameter_name(gsl::index identifier) const override
   {
     switch(identifier)
     {
+    case 0:
+    {
+      return "p";
+    }
     default:
       throw ATK::RuntimeError("No such pin");
     }
@@ -122,6 +128,10 @@ public:
   {
     switch(identifier)
     {
+    case 0:
+    {
+      return p_trimmer;
+    }
     default:
       throw ATK::RuntimeError("No such pin");
     }
@@ -131,6 +141,11 @@ public:
   {
     switch(identifier)
     {
+    case 0:
+    {
+      p_trimmer = value;
+      break;
+    }
     default:
       throw ATK::RuntimeError("No such pin");
     }
@@ -148,7 +163,7 @@ public:
 
       for(gsl::index i = 0; i < INIT_WARMUP; ++i)
       {
-        static_state = target_static_state * ((i + 1.) / INIT_WARMUP);
+        static_state = target_static_state * ((i+1.) / INIT_WARMUP);
         init();
       }
       static_state = target_static_state;
@@ -156,7 +171,8 @@ public:
     setup_inverse<false>();
   }
 
-  template <bool steady_state>
+
+  template<bool steady_state>
   void setup_inverse()
   {
   }
@@ -164,14 +180,12 @@ public:
   void init()
   {
     // update_steady_state
-    r033c027.update_steady_state(1. / input_sampling_rate, input_state[0], dynamic_state[0]);
-    r031c023.update_steady_state(1. / input_sampling_rate, dynamic_state[1], static_state[0]);
+    c18.update_steady_state(1. / input_sampling_rate, dynamic_state[0], dynamic_state[1]);
 
     solve<true>();
 
     // update_steady_state
-    r033c027.update_steady_state(1. / input_sampling_rate, input_state[0], dynamic_state[0]);
-    r031c023.update_steady_state(1. / input_sampling_rate, dynamic_state[1], static_state[0]);
+    c18.update_steady_state(1. / input_sampling_rate, dynamic_state[0], dynamic_state[1]);
 
     initialized = true;
   }
@@ -188,8 +202,7 @@ public:
       solve<false>();
 
       // Update state
-      r033c027.update_state(input_state[0], dynamic_state[0]);
-      r031c023.update_state(dynamic_state[1], static_state[0]);
+      c18.update_state(dynamic_state[0], dynamic_state[1]);
       for(gsl::index j = 0; j < nb_output_ports; ++j)
       {
         outputs[j][i] = dynamic_state[j];
@@ -198,7 +211,7 @@ public:
   }
 
   /// Solve for steady state and non steady state the system
-  template <bool steady_state>
+  template<bool steady_state>
   void solve() const
   {
     gsl::index iteration = 0;
@@ -211,27 +224,26 @@ public:
     }
   }
 
-  template <bool steady_state>
-  bool iterate() const
-  {
+template<bool steady_state>
+bool iterate() const
+{
     // Static states
-    auto s0_ = static_state[0];
+    auto s0_= static_state[0];
 
     // Input states
-    auto i0_ = input_state[0];
+   auto  i0_= input_state[0];
 
     // Dynamic states
-    auto d0_ = dynamic_state[0];
-    auto d1_ = dynamic_state[1];
+    auto d0_= dynamic_state[0];
+    auto d1_= dynamic_state[1];
 
     // Precomputes
-    d004d003.precompute(dynamic_state[0], static_state[0]);
 
     Eigen::Matrix<DataType, 2, 1> eqs(Eigen::Matrix<DataType, 2, 1>::Zero());
-    auto eq0
-        = +d004d003.get_current() - (steady_state ? 0 : r033c027.get_current(i0_, d0_)) + r032.get_current(d0_, d1_);
-    auto eq1 = +(steady_state ? 0 : r031c023.get_current(d1_, s0_)) - r032.get_current(d0_, d1_);
+    auto eq0 = + (steady_state ? 0 : c18.get_current(d0_, d1_)) + (p_trimmer != 0 ? (i0_ - d0_) / (p_trimmer * p) : 0) + (p_trimmer != 1 ? (s0_ - d0_) / ((1 - p_trimmer) * p) : 0);
+    auto eq1 = - (steady_state ? 0 : c18.get_current(d0_, d1_)) + r14.get_current(d1_, s0_);
     eqs << eq0, eq1;
+
 
     // Check if the equations have converged
     if((eqs.array().abs() < EPS).all())
@@ -239,10 +251,10 @@ public:
       return true;
     }
 
-    auto jac0_0 = 0 - d004d003.get_gradient() - (steady_state ? 0 : r033c027.get_gradient()) - r032.get_gradient();
-    auto jac0_1 = 0 + r032.get_gradient();
-    auto jac1_0 = 0 + r032.get_gradient();
-    auto jac1_1 = 0 - (steady_state ? 0 : r031c023.get_gradient()) - r032.get_gradient();
+    auto jac0_0 = 0 - (steady_state ? 0 : c18.get_gradient()) + (p_trimmer != 0 ? -1 / (p_trimmer * p) : 0) + (p_trimmer != 1 ? -1 / ((1 - p_trimmer) * p) : 0);
+    auto jac0_1 = 0 + (steady_state ? 0 : c18.get_gradient());
+    auto jac1_0 = 0 + (steady_state ? 0 : c18.get_gradient());
+    auto jac1_1 = 0 - (steady_state ? 0 : c18.get_gradient()) - r14.get_gradient();
     auto det = (1 * jac0_0 * jac1_1 + -1 * jac0_1 * jac1_0);
     auto invdet = 1 / det;
     auto com0_0 = jac1_1;
@@ -251,7 +263,8 @@ public:
     auto com1_1 = jac0_0;
     Eigen::Matrix<DataType, 2, 2> cojacobian(Eigen::Matrix<DataType, 2, 2>::Zero());
 
-    cojacobian << com0_0, com0_1, com1_0, com1_1;
+    cojacobian << com0_0, com0_1
+      , com1_0, com1_1;
     Eigen::Matrix<DataType, 2, 1> delta = cojacobian * eqs * invdet;
 
     // Check if the update is big enough
@@ -260,26 +273,18 @@ public:
       return true;
     }
 
-    // Big variations are only in steady state mode
-    if constexpr(steady_state)
-    {
-      auto max_delta = delta.array().abs().maxCoeff();
-      if(max_delta > MAX_DELTA)
-      {
-        delta *= MAX_DELTA / max_delta;
-      }
-    }
-
     dynamic_state -= delta;
 
     return false;
   }
+
 };
-} // namespace
+}
+
 namespace Shredder
 {
-std::unique_ptr<ATK::ModellerFilter<double>> createStaticFilter_stage5()
+std::unique_ptr<ATK::ModellerFilter<double>> createStaticFilter_stage6()
 {
-  return std::make_unique<StaticFilter>();
+    return std::make_unique<StaticFilter>();
 }
 } // namespace Shredder
