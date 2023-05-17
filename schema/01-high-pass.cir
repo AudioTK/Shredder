@@ -1,12 +1,10 @@
 *
 vin	vin	0	AC	1V
 *
-C20	vin	2	0.01UF
-R19	0	2	1M
 R1	0	3	3.3k
 C1	3	4	0.047UF
 C2	4	vout	100p
 PR01	4	vout	vout	100k
 
 *	V-	V+	out
-Z1a	4	2	vout
+Z1a	4	vin	vout
