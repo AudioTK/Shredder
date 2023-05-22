@@ -35,6 +35,7 @@ class StaticFilter final: public ATK::ModellerFilter<double>
   ATK::StaticResistorCapacitor<DataType> r12c16{100000, 2.2e-07};
   ATK::StaticResistor<DataType> r13{100000};
   ATK::StaticCapacitor<DataType> c15{0.001};
+  ATK::StaticCapacitor<DataType> c14{4.7e-08};
   DataType p{100000};
   DataType p_trimmer{0};
   ATK::StaticCapacitor<DataType> c17{1e-09};
@@ -74,7 +75,7 @@ public:
 
   gsl::index get_nb_components() const override
   {
-    return 10;
+    return 11;
   }
 
   std::string get_dynamic_pin_name(gsl::index identifier) const override
@@ -82,6 +83,8 @@ public:
     switch(identifier)
     {
     case 5:
+      return "4";
+    case 4:
       return "2";
     case 3:
       return "1";
@@ -89,8 +92,6 @@ public:
       return "vout";
     case 1:
       return "6";
-    case 4:
-      return "4";
     case 0:
       return "3";
     default:
@@ -196,16 +197,18 @@ public:
     // update_steady_state
     r12c16.update_steady_state(1. / input_sampling_rate, dynamic_state[0], dynamic_state[1]);
     c15.update_steady_state(1. / input_sampling_rate, dynamic_state[3], dynamic_state[0]);
+    c14.update_steady_state(1. / input_sampling_rate, dynamic_state[4], dynamic_state[5]);
     c17.update_steady_state(1. / input_sampling_rate, dynamic_state[1], dynamic_state[2]);
-    c13.update_steady_state(1. / input_sampling_rate, dynamic_state[3], dynamic_state[4]);
+    c13.update_steady_state(1. / input_sampling_rate, dynamic_state[3], dynamic_state[5]);
 
     solve<true>();
 
     // update_steady_state
     r12c16.update_steady_state(1. / input_sampling_rate, dynamic_state[0], dynamic_state[1]);
     c15.update_steady_state(1. / input_sampling_rate, dynamic_state[3], dynamic_state[0]);
+    c14.update_steady_state(1. / input_sampling_rate, dynamic_state[4], dynamic_state[5]);
     c17.update_steady_state(1. / input_sampling_rate, dynamic_state[1], dynamic_state[2]);
-    c13.update_steady_state(1. / input_sampling_rate, dynamic_state[3], dynamic_state[4]);
+    c13.update_steady_state(1. / input_sampling_rate, dynamic_state[3], dynamic_state[5]);
 
     initialized = true;
   }
@@ -224,8 +227,9 @@ public:
       // Update state
       r12c16.update_state(dynamic_state[0], dynamic_state[1]);
       c15.update_state(dynamic_state[3], dynamic_state[0]);
+      c14.update_state(dynamic_state[4], dynamic_state[5]);
       c17.update_state(dynamic_state[1], dynamic_state[2]);
-      c13.update_state(dynamic_state[3], dynamic_state[4]);
+      c13.update_state(dynamic_state[3], dynamic_state[5]);
       for(gsl::index j = 0; j < nb_output_ports; ++j)
       {
         outputs[j][i] = dynamic_state[j];
@@ -267,12 +271,12 @@ bool iterate() const
     // Precomputes
 
     Eigen::Matrix<DataType, 6, 1> eqs(Eigen::Matrix<DataType, 6, 1>::Zero());
-    auto eq0 = + (steady_state ? 0 : r12c16.get_current(d0_, d1_)) - (steady_state ? 0 : c15.get_current(d3_, d0_)) - r11.get_current(d5_, d0_);
+    auto eq0 = + (steady_state ? 0 : r12c16.get_current(d0_, d1_)) - (steady_state ? 0 : c15.get_current(d3_, d0_)) - r11.get_current(d4_, d0_);
     auto eq1 = - (steady_state ? 0 : r12c16.get_current(d0_, d1_)) + r13.get_current(d1_, d2_) + (steady_state ? 0 : c17.get_current(d1_, d2_));
     auto eq2 = static_state[0] - dynamic_state[1];
-    auto eq3 = + (steady_state ? 0 : c15.get_current(d3_, d0_)) + (steady_state ? 0 : c13.get_current(d3_, d4_)) + r10.get_current(d3_, d5_) - r9.get_current(i0_, d3_);
-    auto eq4 = + (p_trimmer != 0 ? (s0_ - d4_) / (p_trimmer * p) : 0) - (steady_state ? 0 : c13.get_current(d3_, d4_));
-    auto eq5 = + (p_trimmer != 1 ? (s0_ - d5_) / ((1 - p_trimmer) * p) : 0) + r11.get_current(d5_, d0_) - r10.get_current(d3_, d5_);
+    auto eq3 = + (steady_state ? 0 : c15.get_current(d3_, d0_)) + (p_trimmer != 1 ? (s0_ - d3_) / ((1 - p_trimmer) * p) : 0) + (steady_state ? 0 : c13.get_current(d3_, d5_)) + r10.get_current(d3_, d4_) - r9.get_current(i0_, d3_);
+    auto eq4 = + (steady_state ? 0 : c14.get_current(d4_, d5_)) + r11.get_current(d4_, d0_) - r10.get_current(d3_, d4_);
+    auto eq5 = - (steady_state ? 0 : c14.get_current(d4_, d5_)) + (p_trimmer != 0 ? (s0_ - d5_) / (p_trimmer * p) : 0) - (steady_state ? 0 : c13.get_current(d3_, d5_));
     eqs << eq0, eq1, eq2, eq3, eq4, eq5;
 
 
@@ -286,8 +290,8 @@ bool iterate() const
     auto jac0_1 = 0 + (steady_state ? 0 : r12c16.get_gradient());
     auto jac0_2 = 0;
     auto jac0_3 = 0 + (steady_state ? 0 : c15.get_gradient());
-    auto jac0_4 = 0;
-    auto jac0_5 = 0 + r11.get_gradient();
+    auto jac0_4 = 0 + r11.get_gradient();
+    auto jac0_5 = 0;
     auto jac1_0 = 0 + (steady_state ? 0 : r12c16.get_gradient());
     auto jac1_1 = 0 - (steady_state ? 0 : r12c16.get_gradient()) - r13.get_gradient() - (steady_state ? 0 : c17.get_gradient());
     auto jac1_2 = 0 + r13.get_gradient() + (steady_state ? 0 : c17.get_gradient());
@@ -303,59 +307,59 @@ bool iterate() const
     auto jac3_0 = 0 + (steady_state ? 0 : c15.get_gradient());
     auto jac3_1 = 0;
     auto jac3_2 = 0;
-    auto jac3_3 = 0 - (steady_state ? 0 : c15.get_gradient()) - (steady_state ? 0 : c13.get_gradient()) - r10.get_gradient() - r9.get_gradient();
-    auto jac3_4 = 0 + (steady_state ? 0 : c13.get_gradient());
-    auto jac3_5 = 0 + r10.get_gradient();
-    auto jac4_0 = 0;
+    auto jac3_3 = 0 - (steady_state ? 0 : c15.get_gradient()) + (p_trimmer != 1 ? -1 / ((1 - p_trimmer) * p) : 0) - (steady_state ? 0 : c13.get_gradient()) - r10.get_gradient() - r9.get_gradient();
+    auto jac3_4 = 0 + r10.get_gradient();
+    auto jac3_5 = 0 + (steady_state ? 0 : c13.get_gradient());
+    auto jac4_0 = 0 + r11.get_gradient();
     auto jac4_1 = 0;
     auto jac4_2 = 0;
-    auto jac4_3 = 0 + (steady_state ? 0 : c13.get_gradient());
-    auto jac4_4 = 0 + (p_trimmer != 0 ? -1 / (p_trimmer * p) : 0) - (steady_state ? 0 : c13.get_gradient());
-    auto jac4_5 = 0;
-    auto jac5_0 = 0 + r11.get_gradient();
+    auto jac4_3 = 0 + r10.get_gradient();
+    auto jac4_4 = 0 - (steady_state ? 0 : c14.get_gradient()) - r11.get_gradient() - r10.get_gradient();
+    auto jac4_5 = 0 + (steady_state ? 0 : c14.get_gradient());
+    auto jac5_0 = 0;
     auto jac5_1 = 0;
     auto jac5_2 = 0;
-    auto jac5_3 = 0 + r10.get_gradient();
-    auto jac5_4 = 0;
-    auto jac5_5 = 0 + (p_trimmer != 1 ? -1 / ((1 - p_trimmer) * p) : 0) - r11.get_gradient() - r10.get_gradient();
-    auto det = (1 * jac0_0 * (-1 * jac1_2 * (1 * jac2_1 * (1 * jac3_3 * (1 * jac4_4 * jac5_5) + -1 * jac3_4 * (1 * jac4_3 * jac5_5) + 1 * jac3_5 * (-1 * jac4_4 * jac5_3)))) + -1 * jac0_3 * (1 * jac1_2 * (-1 * jac2_1 * (1 * jac3_0 * (1 * jac4_4 * jac5_5) + 1 * jac3_5 * (-1 * jac4_4 * jac5_0)))) + -1 * jac0_5 * (1 * jac1_2 * (-1 * jac2_1 * (1 * jac3_0 * (-1 * jac4_4 * jac5_3) + -1 * jac3_3 * (-1 * jac4_4 * jac5_0) + 1 * jac3_4 * (-1 * jac4_3 * jac5_0)))));
+    auto jac5_3 = 0 + (steady_state ? 0 : c13.get_gradient());
+    auto jac5_4 = 0 + (steady_state ? 0 : c14.get_gradient());
+    auto jac5_5 = 0 - (steady_state ? 0 : c14.get_gradient()) + (p_trimmer != 0 ? -1 / (p_trimmer * p) : 0) - (steady_state ? 0 : c13.get_gradient());
+    auto det = (1 * jac0_0 * (-1 * jac1_2 * (1 * jac2_1 * (1 * jac3_3 * (1 * jac4_4 * jac5_5 + -1 * jac4_5 * jac5_4) + -1 * jac3_4 * (1 * jac4_3 * jac5_5 + -1 * jac4_5 * jac5_3) + 1 * jac3_5 * (1 * jac4_3 * jac5_4 + -1 * jac4_4 * jac5_3)))) + -1 * jac0_3 * (1 * jac1_2 * (-1 * jac2_1 * (1 * jac3_0 * (1 * jac4_4 * jac5_5 + -1 * jac4_5 * jac5_4) + -1 * jac3_4 * (1 * jac4_0 * jac5_5) + 1 * jac3_5 * (1 * jac4_0 * jac5_4)))) + 1 * jac0_4 * (1 * jac1_2 * (-1 * jac2_1 * (1 * jac3_0 * (1 * jac4_3 * jac5_5 + -1 * jac4_5 * jac5_3) + -1 * jac3_3 * (1 * jac4_0 * jac5_5) + 1 * jac3_5 * (1 * jac4_0 * jac5_3)))));
     auto invdet = 1 / det;
-    auto com0_0 = (-1 * jac1_2 * (1 * jac2_1 * (1 * jac3_3 * (1 * jac4_4 * jac5_5) + -1 * jac3_4 * (1 * jac4_3 * jac5_5) + 1 * jac3_5 * (-1 * jac4_4 * jac5_3))));
+    auto com0_0 = (-1 * jac1_2 * (1 * jac2_1 * (1 * jac3_3 * (1 * jac4_4 * jac5_5 + -1 * jac4_5 * jac5_4) + -1 * jac3_4 * (1 * jac4_3 * jac5_5 + -1 * jac4_5 * jac5_3) + 1 * jac3_5 * (1 * jac4_3 * jac5_4 + -1 * jac4_4 * jac5_3))));
     auto com1_0 = -1 * 0;
-    auto com2_0 = (1 * jac1_0 * (1 * jac2_1 * (1 * jac3_3 * (1 * jac4_4 * jac5_5) + -1 * jac3_4 * (1 * jac4_3 * jac5_5) + 1 * jac3_5 * (-1 * jac4_4 * jac5_3))));
-    auto com3_0 = -1 * (1 * jac1_2 * (-1 * jac2_1 * (1 * jac3_0 * (1 * jac4_4 * jac5_5) + 1 * jac3_5 * (-1 * jac4_4 * jac5_0))));
-    auto com4_0 = (1 * jac1_2 * (-1 * jac2_1 * (1 * jac3_0 * (1 * jac4_3 * jac5_5) + 1 * jac3_5 * (-1 * jac4_3 * jac5_0))));
-    auto com5_0 = -1 * (1 * jac1_2 * (-1 * jac2_1 * (1 * jac3_0 * (-1 * jac4_4 * jac5_3) + -1 * jac3_3 * (-1 * jac4_4 * jac5_0) + 1 * jac3_4 * (-1 * jac4_3 * jac5_0))));
+    auto com2_0 = (1 * jac1_0 * (1 * jac2_1 * (1 * jac3_3 * (1 * jac4_4 * jac5_5 + -1 * jac4_5 * jac5_4) + -1 * jac3_4 * (1 * jac4_3 * jac5_5 + -1 * jac4_5 * jac5_3) + 1 * jac3_5 * (1 * jac4_3 * jac5_4 + -1 * jac4_4 * jac5_3))));
+    auto com3_0 = -1 * (1 * jac1_2 * (-1 * jac2_1 * (1 * jac3_0 * (1 * jac4_4 * jac5_5 + -1 * jac4_5 * jac5_4) + -1 * jac3_4 * (1 * jac4_0 * jac5_5) + 1 * jac3_5 * (1 * jac4_0 * jac5_4))));
+    auto com4_0 = (1 * jac1_2 * (-1 * jac2_1 * (1 * jac3_0 * (1 * jac4_3 * jac5_5 + -1 * jac4_5 * jac5_3) + -1 * jac3_3 * (1 * jac4_0 * jac5_5) + 1 * jac3_5 * (1 * jac4_0 * jac5_3))));
+    auto com5_0 = -1 * (1 * jac1_2 * (-1 * jac2_1 * (1 * jac3_0 * (1 * jac4_3 * jac5_4 + -1 * jac4_4 * jac5_3) + -1 * jac3_3 * (1 * jac4_0 * jac5_4) + 1 * jac3_4 * (1 * jac4_0 * jac5_3))));
     auto com0_1 = -1 * 0;
     auto com1_1 = 0;
-    auto com2_1 = -1 * (1 * jac0_0 * (1 * jac2_1 * (1 * jac3_3 * (1 * jac4_4 * jac5_5) + -1 * jac3_4 * (1 * jac4_3 * jac5_5) + 1 * jac3_5 * (-1 * jac4_4 * jac5_3))) + 1 * jac0_3 * (-1 * jac2_1 * (1 * jac3_0 * (1 * jac4_4 * jac5_5) + 1 * jac3_5 * (-1 * jac4_4 * jac5_0))) + 1 * jac0_5 * (-1 * jac2_1 * (1 * jac3_0 * (-1 * jac4_4 * jac5_3) + -1 * jac3_3 * (-1 * jac4_4 * jac5_0) + 1 * jac3_4 * (-1 * jac4_3 * jac5_0))));
+    auto com2_1 = -1 * (1 * jac0_0 * (1 * jac2_1 * (1 * jac3_3 * (1 * jac4_4 * jac5_5 + -1 * jac4_5 * jac5_4) + -1 * jac3_4 * (1 * jac4_3 * jac5_5 + -1 * jac4_5 * jac5_3) + 1 * jac3_5 * (1 * jac4_3 * jac5_4 + -1 * jac4_4 * jac5_3))) + 1 * jac0_3 * (-1 * jac2_1 * (1 * jac3_0 * (1 * jac4_4 * jac5_5 + -1 * jac4_5 * jac5_4) + -1 * jac3_4 * (1 * jac4_0 * jac5_5) + 1 * jac3_5 * (1 * jac4_0 * jac5_4))) + -1 * jac0_4 * (-1 * jac2_1 * (1 * jac3_0 * (1 * jac4_3 * jac5_5 + -1 * jac4_5 * jac5_3) + -1 * jac3_3 * (1 * jac4_0 * jac5_5) + 1 * jac3_5 * (1 * jac4_0 * jac5_3))));
     auto com3_1 = 0;
     auto com4_1 = -1 * 0;
     auto com5_1 = 0;
-    auto com0_2 = (1 * jac0_1 * (1 * jac1_2 * (1 * jac3_3 * (1 * jac4_4 * jac5_5) + -1 * jac3_4 * (1 * jac4_3 * jac5_5) + 1 * jac3_5 * (-1 * jac4_4 * jac5_3))));
-    auto com1_2 = -1 * (1 * jac0_0 * (1 * jac1_2 * (1 * jac3_3 * (1 * jac4_4 * jac5_5) + -1 * jac3_4 * (1 * jac4_3 * jac5_5) + 1 * jac3_5 * (-1 * jac4_4 * jac5_3))) + 1 * jac0_3 * (-1 * jac1_2 * (1 * jac3_0 * (1 * jac4_4 * jac5_5) + 1 * jac3_5 * (-1 * jac4_4 * jac5_0))) + 1 * jac0_5 * (-1 * jac1_2 * (1 * jac3_0 * (-1 * jac4_4 * jac5_3) + -1 * jac3_3 * (-1 * jac4_4 * jac5_0) + 1 * jac3_4 * (-1 * jac4_3 * jac5_0))));
-    auto com2_2 = (1 * jac0_0 * (1 * jac1_1 * (1 * jac3_3 * (1 * jac4_4 * jac5_5) + -1 * jac3_4 * (1 * jac4_3 * jac5_5) + 1 * jac3_5 * (-1 * jac4_4 * jac5_3))) + -1 * jac0_1 * (1 * jac1_0 * (1 * jac3_3 * (1 * jac4_4 * jac5_5) + -1 * jac3_4 * (1 * jac4_3 * jac5_5) + 1 * jac3_5 * (-1 * jac4_4 * jac5_3))) + 1 * jac0_3 * (-1 * jac1_1 * (1 * jac3_0 * (1 * jac4_4 * jac5_5) + 1 * jac3_5 * (-1 * jac4_4 * jac5_0))) + 1 * jac0_5 * (-1 * jac1_1 * (1 * jac3_0 * (-1 * jac4_4 * jac5_3) + -1 * jac3_3 * (-1 * jac4_4 * jac5_0) + 1 * jac3_4 * (-1 * jac4_3 * jac5_0))));
-    auto com3_2 = -1 * (-1 * jac0_1 * (-1 * jac1_2 * (1 * jac3_0 * (1 * jac4_4 * jac5_5) + 1 * jac3_5 * (-1 * jac4_4 * jac5_0))));
-    auto com4_2 = (-1 * jac0_1 * (-1 * jac1_2 * (1 * jac3_0 * (1 * jac4_3 * jac5_5) + 1 * jac3_5 * (-1 * jac4_3 * jac5_0))));
-    auto com5_2 = -1 * (-1 * jac0_1 * (-1 * jac1_2 * (1 * jac3_0 * (-1 * jac4_4 * jac5_3) + -1 * jac3_3 * (-1 * jac4_4 * jac5_0) + 1 * jac3_4 * (-1 * jac4_3 * jac5_0))));
-    auto com0_3 = -1 * (1 * jac0_3 * (-1 * jac1_2 * (1 * jac2_1 * (1 * jac4_4 * jac5_5))) + 1 * jac0_5 * (-1 * jac1_2 * (1 * jac2_1 * (-1 * jac4_4 * jac5_3))));
+    auto com0_2 = (1 * jac0_1 * (1 * jac1_2 * (1 * jac3_3 * (1 * jac4_4 * jac5_5 + -1 * jac4_5 * jac5_4) + -1 * jac3_4 * (1 * jac4_3 * jac5_5 + -1 * jac4_5 * jac5_3) + 1 * jac3_5 * (1 * jac4_3 * jac5_4 + -1 * jac4_4 * jac5_3))));
+    auto com1_2 = -1 * (1 * jac0_0 * (1 * jac1_2 * (1 * jac3_3 * (1 * jac4_4 * jac5_5 + -1 * jac4_5 * jac5_4) + -1 * jac3_4 * (1 * jac4_3 * jac5_5 + -1 * jac4_5 * jac5_3) + 1 * jac3_5 * (1 * jac4_3 * jac5_4 + -1 * jac4_4 * jac5_3))) + 1 * jac0_3 * (-1 * jac1_2 * (1 * jac3_0 * (1 * jac4_4 * jac5_5 + -1 * jac4_5 * jac5_4) + -1 * jac3_4 * (1 * jac4_0 * jac5_5) + 1 * jac3_5 * (1 * jac4_0 * jac5_4))) + -1 * jac0_4 * (-1 * jac1_2 * (1 * jac3_0 * (1 * jac4_3 * jac5_5 + -1 * jac4_5 * jac5_3) + -1 * jac3_3 * (1 * jac4_0 * jac5_5) + 1 * jac3_5 * (1 * jac4_0 * jac5_3))));
+    auto com2_2 = (1 * jac0_0 * (1 * jac1_1 * (1 * jac3_3 * (1 * jac4_4 * jac5_5 + -1 * jac4_5 * jac5_4) + -1 * jac3_4 * (1 * jac4_3 * jac5_5 + -1 * jac4_5 * jac5_3) + 1 * jac3_5 * (1 * jac4_3 * jac5_4 + -1 * jac4_4 * jac5_3))) + -1 * jac0_1 * (1 * jac1_0 * (1 * jac3_3 * (1 * jac4_4 * jac5_5 + -1 * jac4_5 * jac5_4) + -1 * jac3_4 * (1 * jac4_3 * jac5_5 + -1 * jac4_5 * jac5_3) + 1 * jac3_5 * (1 * jac4_3 * jac5_4 + -1 * jac4_4 * jac5_3))) + 1 * jac0_3 * (-1 * jac1_1 * (1 * jac3_0 * (1 * jac4_4 * jac5_5 + -1 * jac4_5 * jac5_4) + -1 * jac3_4 * (1 * jac4_0 * jac5_5) + 1 * jac3_5 * (1 * jac4_0 * jac5_4))) + -1 * jac0_4 * (-1 * jac1_1 * (1 * jac3_0 * (1 * jac4_3 * jac5_5 + -1 * jac4_5 * jac5_3) + -1 * jac3_3 * (1 * jac4_0 * jac5_5) + 1 * jac3_5 * (1 * jac4_0 * jac5_3))));
+    auto com3_2 = -1 * (-1 * jac0_1 * (-1 * jac1_2 * (1 * jac3_0 * (1 * jac4_4 * jac5_5 + -1 * jac4_5 * jac5_4) + -1 * jac3_4 * (1 * jac4_0 * jac5_5) + 1 * jac3_5 * (1 * jac4_0 * jac5_4))));
+    auto com4_2 = (-1 * jac0_1 * (-1 * jac1_2 * (1 * jac3_0 * (1 * jac4_3 * jac5_5 + -1 * jac4_5 * jac5_3) + -1 * jac3_3 * (1 * jac4_0 * jac5_5) + 1 * jac3_5 * (1 * jac4_0 * jac5_3))));
+    auto com5_2 = -1 * (-1 * jac0_1 * (-1 * jac1_2 * (1 * jac3_0 * (1 * jac4_3 * jac5_4 + -1 * jac4_4 * jac5_3) + -1 * jac3_3 * (1 * jac4_0 * jac5_4) + 1 * jac3_4 * (1 * jac4_0 * jac5_3))));
+    auto com0_3 = -1 * (1 * jac0_3 * (-1 * jac1_2 * (1 * jac2_1 * (1 * jac4_4 * jac5_5 + -1 * jac4_5 * jac5_4))) + -1 * jac0_4 * (-1 * jac1_2 * (1 * jac2_1 * (1 * jac4_3 * jac5_5 + -1 * jac4_5 * jac5_3))));
     auto com1_3 = 0;
-    auto com2_3 = -1 * (1 * jac0_3 * (1 * jac1_0 * (1 * jac2_1 * (1 * jac4_4 * jac5_5))) + 1 * jac0_5 * (1 * jac1_0 * (1 * jac2_1 * (-1 * jac4_4 * jac5_3))));
-    auto com3_3 = (1 * jac0_0 * (-1 * jac1_2 * (1 * jac2_1 * (1 * jac4_4 * jac5_5))) + 1 * jac0_5 * (1 * jac1_2 * (-1 * jac2_1 * (-1 * jac4_4 * jac5_0))));
-    auto com4_3 = -1 * (1 * jac0_0 * (-1 * jac1_2 * (1 * jac2_1 * (1 * jac4_3 * jac5_5))) + 1 * jac0_5 * (1 * jac1_2 * (-1 * jac2_1 * (-1 * jac4_3 * jac5_0))));
-    auto com5_3 = (1 * jac0_0 * (-1 * jac1_2 * (1 * jac2_1 * (-1 * jac4_4 * jac5_3))) + -1 * jac0_3 * (1 * jac1_2 * (-1 * jac2_1 * (-1 * jac4_4 * jac5_0))));
-    auto com0_4 = (1 * jac0_3 * (-1 * jac1_2 * (1 * jac2_1 * (1 * jac3_4 * jac5_5))) + 1 * jac0_5 * (-1 * jac1_2 * (1 * jac2_1 * (-1 * jac3_4 * jac5_3))));
+    auto com2_3 = -1 * (1 * jac0_3 * (1 * jac1_0 * (1 * jac2_1 * (1 * jac4_4 * jac5_5 + -1 * jac4_5 * jac5_4))) + -1 * jac0_4 * (1 * jac1_0 * (1 * jac2_1 * (1 * jac4_3 * jac5_5 + -1 * jac4_5 * jac5_3))));
+    auto com3_3 = (1 * jac0_0 * (-1 * jac1_2 * (1 * jac2_1 * (1 * jac4_4 * jac5_5 + -1 * jac4_5 * jac5_4))) + -1 * jac0_4 * (1 * jac1_2 * (-1 * jac2_1 * (1 * jac4_0 * jac5_5))));
+    auto com4_3 = -1 * (1 * jac0_0 * (-1 * jac1_2 * (1 * jac2_1 * (1 * jac4_3 * jac5_5 + -1 * jac4_5 * jac5_3))) + -1 * jac0_3 * (1 * jac1_2 * (-1 * jac2_1 * (1 * jac4_0 * jac5_5))));
+    auto com5_3 = (1 * jac0_0 * (-1 * jac1_2 * (1 * jac2_1 * (1 * jac4_3 * jac5_4 + -1 * jac4_4 * jac5_3))) + -1 * jac0_3 * (1 * jac1_2 * (-1 * jac2_1 * (1 * jac4_0 * jac5_4))) + 1 * jac0_4 * (1 * jac1_2 * (-1 * jac2_1 * (1 * jac4_0 * jac5_3))));
+    auto com0_4 = (1 * jac0_3 * (-1 * jac1_2 * (1 * jac2_1 * (1 * jac3_4 * jac5_5 + -1 * jac3_5 * jac5_4))) + -1 * jac0_4 * (-1 * jac1_2 * (1 * jac2_1 * (1 * jac3_3 * jac5_5 + -1 * jac3_5 * jac5_3))));
     auto com1_4 = -1 * 0;
-    auto com2_4 = (1 * jac0_3 * (1 * jac1_0 * (1 * jac2_1 * (1 * jac3_4 * jac5_5))) + 1 * jac0_5 * (1 * jac1_0 * (1 * jac2_1 * (-1 * jac3_4 * jac5_3))));
-    auto com3_4 = -1 * (1 * jac0_0 * (-1 * jac1_2 * (1 * jac2_1 * (1 * jac3_4 * jac5_5))) + 1 * jac0_5 * (1 * jac1_2 * (-1 * jac2_1 * (-1 * jac3_4 * jac5_0))));
-    auto com4_4 = (1 * jac0_0 * (-1 * jac1_2 * (1 * jac2_1 * (1 * jac3_3 * jac5_5 + -1 * jac3_5 * jac5_3))) + -1 * jac0_3 * (1 * jac1_2 * (-1 * jac2_1 * (1 * jac3_0 * jac5_5 + -1 * jac3_5 * jac5_0))) + 1 * jac0_5 * (1 * jac1_2 * (-1 * jac2_1 * (1 * jac3_0 * jac5_3 + -1 * jac3_3 * jac5_0))));
-    auto com5_4 = -1 * (1 * jac0_0 * (-1 * jac1_2 * (1 * jac2_1 * (-1 * jac3_4 * jac5_3))) + -1 * jac0_3 * (1 * jac1_2 * (-1 * jac2_1 * (-1 * jac3_4 * jac5_0))));
-    auto com0_5 = -1 * (1 * jac0_3 * (-1 * jac1_2 * (1 * jac2_1 * (-1 * jac3_5 * jac4_4))) + 1 * jac0_5 * (-1 * jac1_2 * (1 * jac2_1 * (1 * jac3_3 * jac4_4 + -1 * jac3_4 * jac4_3))));
+    auto com2_4 = (1 * jac0_3 * (1 * jac1_0 * (1 * jac2_1 * (1 * jac3_4 * jac5_5 + -1 * jac3_5 * jac5_4))) + -1 * jac0_4 * (1 * jac1_0 * (1 * jac2_1 * (1 * jac3_3 * jac5_5 + -1 * jac3_5 * jac5_3))));
+    auto com3_4 = -1 * (1 * jac0_0 * (-1 * jac1_2 * (1 * jac2_1 * (1 * jac3_4 * jac5_5 + -1 * jac3_5 * jac5_4))) + -1 * jac0_4 * (1 * jac1_2 * (-1 * jac2_1 * (1 * jac3_0 * jac5_5))));
+    auto com4_4 = (1 * jac0_0 * (-1 * jac1_2 * (1 * jac2_1 * (1 * jac3_3 * jac5_5 + -1 * jac3_5 * jac5_3))) + -1 * jac0_3 * (1 * jac1_2 * (-1 * jac2_1 * (1 * jac3_0 * jac5_5))));
+    auto com5_4 = -1 * (1 * jac0_0 * (-1 * jac1_2 * (1 * jac2_1 * (1 * jac3_3 * jac5_4 + -1 * jac3_4 * jac5_3))) + -1 * jac0_3 * (1 * jac1_2 * (-1 * jac2_1 * (1 * jac3_0 * jac5_4))) + 1 * jac0_4 * (1 * jac1_2 * (-1 * jac2_1 * (1 * jac3_0 * jac5_3))));
+    auto com0_5 = -1 * (1 * jac0_3 * (-1 * jac1_2 * (1 * jac2_1 * (1 * jac3_4 * jac4_5 + -1 * jac3_5 * jac4_4))) + -1 * jac0_4 * (-1 * jac1_2 * (1 * jac2_1 * (1 * jac3_3 * jac4_5 + -1 * jac3_5 * jac4_3))));
     auto com1_5 = 0;
-    auto com2_5 = -1 * (1 * jac0_3 * (1 * jac1_0 * (1 * jac2_1 * (-1 * jac3_5 * jac4_4))) + 1 * jac0_5 * (1 * jac1_0 * (1 * jac2_1 * (1 * jac3_3 * jac4_4 + -1 * jac3_4 * jac4_3))));
-    auto com3_5 = (1 * jac0_0 * (-1 * jac1_2 * (1 * jac2_1 * (-1 * jac3_5 * jac4_4))) + 1 * jac0_5 * (1 * jac1_2 * (-1 * jac2_1 * (1 * jac3_0 * jac4_4))));
-    auto com4_5 = -1 * (1 * jac0_0 * (-1 * jac1_2 * (1 * jac2_1 * (-1 * jac3_5 * jac4_3))) + 1 * jac0_5 * (1 * jac1_2 * (-1 * jac2_1 * (1 * jac3_0 * jac4_3))));
-    auto com5_5 = (1 * jac0_0 * (-1 * jac1_2 * (1 * jac2_1 * (1 * jac3_3 * jac4_4 + -1 * jac3_4 * jac4_3))) + -1 * jac0_3 * (1 * jac1_2 * (-1 * jac2_1 * (1 * jac3_0 * jac4_4))));
+    auto com2_5 = -1 * (1 * jac0_3 * (1 * jac1_0 * (1 * jac2_1 * (1 * jac3_4 * jac4_5 + -1 * jac3_5 * jac4_4))) + -1 * jac0_4 * (1 * jac1_0 * (1 * jac2_1 * (1 * jac3_3 * jac4_5 + -1 * jac3_5 * jac4_3))));
+    auto com3_5 = (1 * jac0_0 * (-1 * jac1_2 * (1 * jac2_1 * (1 * jac3_4 * jac4_5 + -1 * jac3_5 * jac4_4))) + -1 * jac0_4 * (1 * jac1_2 * (-1 * jac2_1 * (1 * jac3_0 * jac4_5 + -1 * jac3_5 * jac4_0))));
+    auto com4_5 = -1 * (1 * jac0_0 * (-1 * jac1_2 * (1 * jac2_1 * (1 * jac3_3 * jac4_5 + -1 * jac3_5 * jac4_3))) + -1 * jac0_3 * (1 * jac1_2 * (-1 * jac2_1 * (1 * jac3_0 * jac4_5 + -1 * jac3_5 * jac4_0))));
+    auto com5_5 = (1 * jac0_0 * (-1 * jac1_2 * (1 * jac2_1 * (1 * jac3_3 * jac4_4 + -1 * jac3_4 * jac4_3))) + -1 * jac0_3 * (1 * jac1_2 * (-1 * jac2_1 * (1 * jac3_0 * jac4_4 + -1 * jac3_4 * jac4_0))) + 1 * jac0_4 * (1 * jac1_2 * (-1 * jac2_1 * (1 * jac3_0 * jac4_3 + -1 * jac3_3 * jac4_0))));
     Eigen::Matrix<DataType, 6, 6> cojacobian(Eigen::Matrix<DataType, 6, 6>::Zero());
 
     cojacobian << com0_0, com0_1, com0_2, com0_3, com0_4, com0_5

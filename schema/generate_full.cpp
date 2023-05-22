@@ -60,8 +60,7 @@ int main(int argc, const char** argv)
     oversamplingFilter.set_input_port(0, bandPassFilter.get(),
                                       bandPassFilter->find_dynamic_pin("vout"));
     driveFilter->set_input_port(driveFilter->find_input_pin("vin"),
-                                &oversamplingFilter,
-                                oversamplingFilter.find_dynamic_pin("vout"));
+                                &oversamplingFilter, 0);
     toneShapingFilter->set_input_port(toneShapingFilter->find_input_pin("vin"),
                                       driveFilter.get(),
                                       driveFilter->find_dynamic_pin("vout"));
@@ -103,7 +102,11 @@ int main(int argc, const char** argv)
     outFilter.set_input_sampling_rate(SAMPLING_RATE);
     outFilter.set_output_sampling_rate(SAMPLING_RATE);
 
-    distLevelFilter->set_parameter(0, 0.1);
+    highPassFilter->set_parameter(0, 0.5);
+    driveFilter->set_parameter(0, 0.5);
+    driveFilter->set_parameter(1, 0.5);
+    driveFilter->set_parameter(2, 0.5);
+    contourFilter->set_parameter(0, 0.5);
 
     for (gsl::index i = 0; i < PROCESSSIZE; i += 1024)
     {

@@ -78,7 +78,7 @@ public:
     case 1:
       return "vout";
     case 0:
-      return "4";
+      return "2";
     default:
       throw ATK::RuntimeError("No such pin");
     }
